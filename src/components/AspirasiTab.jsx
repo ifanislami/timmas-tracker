@@ -1,13 +1,17 @@
 import { useCallback, useMemo, useState } from 'react'
 import {
-  Archive,
-  ArchiveRestore,
-  Link2,
+  CalendarDays,
+  Check,
+  ClipboardList,
   MessageCircle,
+  MessageSquareText,
   Pencil,
   Plus,
+  RotateCcw,
   Search,
+  Tag,
   Trash2,
+  UserRound,
   X,
 } from 'lucide-react'
 import { uid } from '../hooks/useLocalStorage'
@@ -34,7 +38,6 @@ const emptyForm = {
   tindakLanjut: '',
 }
 
-/** Normalize legacy `pengaju` into nama/organisasi. */
 function resolveNama(item) {
   if (item.nama) return item.nama
   return item.pengaju || ''
@@ -64,7 +67,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
-  const [view, setView] = useState('aktif') // aktif | arsip
+  const [view, setView] = useState('aktif')
   const [query, setQuery] = useState('')
   const [filterTopik, setFilterTopik] = useState('Semua')
   const [newTopic, setNewTopic] = useState('')
@@ -184,9 +187,15 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
     setForm({ ...emptyForm, tanggal: todayISO() })
   }
 
-  function toggleArchive(id, archived) {
+  function markSelesai(id) {
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, archived, updatedAt: Date.now() } : i)),
+      prev.map((i) => (i.id === id ? { ...i, archived: true, updatedAt: Date.now() } : i)),
+    )
+  }
+
+  function markAktif(id) {
+    setItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, archived: false, updatedAt: Date.now() } : i)),
     )
   }
 
@@ -251,7 +260,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
         </div>
 
         <div className="search-box">
-          <Search size={16} />
+          <Search size={16} aria-hidden="true" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -295,127 +304,113 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
         </div>
       </div>
 
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th style={{ width: 48 }}>Selesai</th>
-              <th style={{ width: 110 }}>Tanggal</th>
-              <th>Nama</th>
-              <th>Organisasi</th>
-              <th>Aspirasi</th>
-              <th>Topik</th>
-              <th>Tindak lanjut</th>
-              <th style={{ width: 110 }}>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={8} className="empty">
-                  {items.length === 0
-                    ? 'Belum ada aspirasi. Klik "Tambah Aspirasi" untuk mencatat yang pertama.'
-                    : 'Tidak ada hasil di filter ini. Ubah pencarian atau topik.'}
-                </td>
-              </tr>
-            )}
-            {filtered.map((item) => {
-              const link = waLink(item.wa)
-              const nama = resolveNama(item)
-              const organisasi = resolveOrganisasi(item)
-              return (
-                <tr key={item.id} className={item.archived ? 'row-archived' : ''}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(item.archived)}
-                      onChange={(e) => toggleArchive(item.id, e.target.checked)}
-                      title={item.archived ? 'Kembalikan ke aktif' : 'Pindahkan ke arsip'}
-                    />
-                  </td>
-                  <td className="date-cell">
-                    {item.tanggal ? (
-                      formatTanggal(item.tanggal)
+      <div className="aspirasi-list">
+        {filtered.length === 0 && (
+          <div className="empty-card">
+            <strong>
+              {items.length === 0 ? 'Belum ada aspirasi' : 'Tidak ada hasil di filter ini'}
+            </strong>
+            <span>
+              {items.length === 0
+                ? 'Klik "Tambah Aspirasi" untuk mencatat yang pertama.'
+                : 'Ubah pencarian atau topik.'}
+            </span>
+          </div>
+        )}
+
+        {filtered.map((item) => {
+          const link = waLink(item.wa)
+          const nama = resolveNama(item)
+          const organisasi = resolveOrganisasi(item)
+          return (
+            <article
+              key={item.id}
+              className={`aspirasi-card${item.archived ? ' is-archived' : ''}`}
+            >
+              <div className="aspirasi-row">
+                <span className="aspirasi-ico" title="Pihak yang mengajukan" aria-hidden="true">
+                  <UserRound size={16} />
+                </span>
+                <div className="aspirasi-row-body aspirasi-party">
+                  <strong>{nama || 'Tanpa nama'}</strong>
+                  {organisasi ? <span className="aspirasi-org">{organisasi}</span> : null}
+                  <span className={`badge topic-${slug(item.topik)}`} title="Topik">
+                    <Tag size={12} aria-hidden="true" /> {item.topik}
+                  </span>
+                </div>
+              </div>
+
+              <div className="aspirasi-row">
+                <span className="aspirasi-ico" title="Waktu" aria-hidden="true">
+                  <CalendarDays size={16} />
+                </span>
+                <div className="aspirasi-row-body aspirasi-meta">
+                  <span>{item.tanggal ? formatTanggal(item.tanggal) : 'Belum diisi'}</span>
+                  {item.wa ? (
+                    link ? (
+                      <a href={link} target="_blank" rel="noreferrer" className="wa-link" title="WhatsApp">
+                        <MessageCircle size={14} aria-hidden="true" />
+                        {item.wa}
+                      </a>
                     ) : (
-                      <span className="muted">Belum diisi</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="pengaju">
-                      <strong>{nama || <span className="muted">Tanpa nama</span>}</strong>
-                      {item.wa && (
-                        <div className="wa-row">
-                          {link ? (
-                            <a href={link} target="_blank" rel="noreferrer" className="wa-link">
-                              <MessageCircle size={14} />
-                              {item.wa}
-                              <Link2 size={12} />
-                            </a>
-                          ) : (
-                            <span className="muted">{item.wa}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="cell-wrap">
-                    {organisasi || <span className="muted">-</span>}
-                  </td>
-                  <td className="cell-wrap">{item.aspirasi}</td>
-                  <td>
-                    <span className={`badge topic-${slug(item.topik)}`}>{item.topik}</span>
-                  </td>
-                  <td className="cell-wrap">
-                    {item.tindakLanjut || <span className="muted">Belum ada</span>}
-                  </td>
-                  <td>
-                    <div className="row-actions">
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        title="Edit"
-                        aria-label="Edit aspirasi"
-                        onClick={() => openEdit(item)}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      {item.archived ? (
-                        <button
-                          type="button"
-                          className="icon-btn"
-                          title="Kembalikan"
-                          aria-label="Kembalikan dari arsip"
-                          onClick={() => toggleArchive(item.id, false)}
-                        >
-                          <ArchiveRestore size={15} />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="icon-btn"
-                          title="Arsipkan"
-                          aria-label="Arsipkan aspirasi"
-                          onClick={() => toggleArchive(item.id, true)}
-                        >
-                          <Archive size={15} />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="icon-btn danger"
-                        title="Hapus"
-                        aria-label="Hapus aspirasi"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                      <span className="muted">{item.wa}</span>
+                    )
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="aspirasi-row">
+                <span className="aspirasi-ico" title="Aspirasi" aria-hidden="true">
+                  <MessageSquareText size={16} />
+                </span>
+                <div className="aspirasi-row-body cell-wrap">{item.aspirasi}</div>
+              </div>
+
+              <div className="aspirasi-row">
+                <span className="aspirasi-ico" title="Tindak lanjut" aria-hidden="true">
+                  <ClipboardList size={16} />
+                </span>
+                <div className="aspirasi-row-body cell-wrap">
+                  {item.tindakLanjut || <span className="muted">Belum ada</span>}
+                </div>
+              </div>
+
+              <div className="aspirasi-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => openEdit(item)}
+                >
+                  <Pencil size={15} aria-hidden="true" /> Edit
+                </button>
+                {item.archived ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => markAktif(item.id)}
+                  >
+                    <RotateCcw size={15} aria-hidden="true" /> Aktifkan
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => markSelesai(item.id)}
+                  >
+                    <Check size={15} aria-hidden="true" /> Selesai
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-danger-text"
+                  onClick={() => removeItem(item.id)}
+                >
+                  <Trash2 size={15} aria-hidden="true" /> Hapus
+                </button>
+              </div>
+            </article>
+          )
+        })}
       </div>
 
       {showForm && (
@@ -434,23 +429,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
               </button>
             </div>
             <form onSubmit={saveItem} className="form-grid">
-              <label>
-                Tanggal
-                <input
-                  type="date"
-                  required
-                  value={form.tanggal}
-                  onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
-                />
-              </label>
-              <label>
-                Nomor WhatsApp
-                <input
-                  value={form.wa}
-                  onChange={(e) => setForm({ ...form, wa: e.target.value })}
-                  placeholder="08xxxxxxxxxx"
-                />
-              </label>
+              <p className="form-section-label full">Pihak yang mengajukan</p>
               <label>
                 Nama
                 <input
@@ -468,16 +447,6 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                   placeholder="Organisasi / komunitas (opsional)"
                 />
               </label>
-              <label className="full">
-                Aspirasi
-                <textarea
-                  required
-                  rows={3}
-                  value={form.aspirasi}
-                  onChange={(e) => setForm({ ...form, aspirasi: e.target.value })}
-                  placeholder="Isi aspirasi..."
-                />
-              </label>
               <label>
                 Topik
                 <select
@@ -491,8 +460,16 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                   ))}
                 </select>
               </label>
+              <label>
+                Nomor WhatsApp
+                <input
+                  value={form.wa}
+                  onChange={(e) => setForm({ ...form, wa: e.target.value })}
+                  placeholder="08xxxxxxxxxx"
+                />
+              </label>
               {form.topik === 'Lain-lain' && (
-                <label>
+                <label className="full">
                   Topik baru (opsional)
                   <input
                     value={form.customTopik}
@@ -501,6 +478,25 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                   />
                 </label>
               )}
+              <label className="full">
+                Waktu
+                <input
+                  type="date"
+                  required
+                  value={form.tanggal}
+                  onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
+                />
+              </label>
+              <label className="full">
+                Aspirasi
+                <textarea
+                  required
+                  rows={3}
+                  value={form.aspirasi}
+                  onChange={(e) => setForm({ ...form, aspirasi: e.target.value })}
+                  placeholder="Isi aspirasi..."
+                />
+              </label>
               <label className="full">
                 Tindak lanjut
                 <textarea
