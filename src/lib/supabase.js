@@ -1,11 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-function normalizeSupabaseUrl(raw) {
+/** Client butuh origin saja, bukan REST URL (.../rest/v1). */
+export function normalizeSupabaseUrl(raw) {
   if (!raw) return ''
-  let url = String(raw).trim().replace(/\/+$/, '')
-  // Dashboard "REST URL" sering menyertakan /rest/v1 — client butuh origin saja.
-  url = url.replace(/\/rest\/v1$/i, '')
-  return url
+  const text = String(raw).trim()
+  try {
+    return new URL(text).origin
+  } catch {
+    return text
+      .replace(/\/+$/, '')
+      .replace(/\/rest\/v1.*$/i, '')
+  }
 }
 
 const url = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL)

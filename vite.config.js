@@ -3,15 +3,19 @@ import { defineConfig, loadEnv } from 'vite'
 
 function normalizeSupabaseUrl(raw) {
   if (!raw) return ''
-  return String(raw)
-    .trim()
-    .replace(/\/+$/, '')
-    .replace(/\/rest\/v1$/i, '')
+  const text = String(raw).trim()
+  try {
+    return new URL(text).origin
+  } catch {
+    return text
+      .replace(/\/+$/, '')
+      .replace(/\/rest\/v1.*$/i, '')
+  }
 }
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  // File lokal (.env.local) + process.env (Vercel dashboard / integrasi Supabase)
+  // File lokal (.env.local) + process.env (Vercel Shared: SUPABASE_URL / SUPABASE_ANON_KEY)
   const fileEnv = loadEnv(mode, process.cwd(), '')
   const supabaseUrl = normalizeSupabaseUrl(
     process.env.VITE_SUPABASE_URL ||
