@@ -613,7 +613,7 @@
 }
 
 .modal {
-  width: min(640px, 100%);
+  width: min(720px, 100%);
   max-height: 90vh;
   overflow: auto;
   background: #fff;
@@ -638,7 +638,8 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 12px 14px;
+  align-items: start;
 }
 
 .form-grid label {
@@ -648,11 +649,34 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: #334155;
+  min-width: 0;
+  width: 100%;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.form-grid select {
+  appearance: auto;
 }
 
 .form-grid .full,
 .modal-actions.full {
   grid-column: 1 / -1;
+}
+
+.form-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+  min-width: 0;
 }
 
 .modal-actions {
@@ -928,7 +952,8 @@
     grid-template-columns: 1fr;
   }
 
-  .form-grid {
+  .form-grid,
+  .form-row {
     grid-template-columns: 1fr;
   }
 

@@ -470,44 +470,48 @@ export default function AspirasiTab({
             </div>
             <form onSubmit={saveItem} className="form-grid">
               <p className="form-section-label full">Pihak yang mengajukan</p>
-              <label>
-                Nama
-                <input
-                  required
-                  value={form.nama}
-                  onChange={(e) => setForm({ ...form, nama: e.target.value })}
-                  placeholder="Nama pengaju"
-                />
-              </label>
-              <label>
-                Organisasi
-                <input
-                  value={form.organisasi}
-                  onChange={(e) => setForm({ ...form, organisasi: e.target.value })}
-                  placeholder="Organisasi / komunitas (opsional)"
-                />
-              </label>
-              <label>
-                Topik
-                <select
-                  value={form.topik}
-                  onChange={(e) => setForm({ ...form, topik: e.target.value })}
-                >
-                  {allTopics.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Nomor WhatsApp
-                <input
-                  value={form.wa}
-                  onChange={(e) => setForm({ ...form, wa: e.target.value })}
-                  placeholder="08xxxxxxxxxx"
-                />
-              </label>
+              <div className="form-row">
+                <label>
+                  Nama
+                  <input
+                    required
+                    value={form.nama}
+                    onChange={(e) => setForm({ ...form, nama: e.target.value })}
+                    placeholder="Nama pengaju"
+                  />
+                </label>
+                <label>
+                  Organisasi
+                  <input
+                    value={form.organisasi}
+                    onChange={(e) => setForm({ ...form, organisasi: e.target.value })}
+                    placeholder="Organisasi / komunitas (opsional)"
+                  />
+                </label>
+              </div>
+              <div className="form-row">
+                <label>
+                  Topik
+                  <select
+                    value={form.topik}
+                    onChange={(e) => setForm({ ...form, topik: e.target.value })}
+                  >
+                    {allTopics.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Nomor WhatsApp
+                  <input
+                    value={form.wa}
+                    onChange={(e) => setForm({ ...form, wa: e.target.value })}
+                    placeholder="08xxxxxxxxxx"
+                  />
+                </label>
+              </div>
               {form.topik === 'Lain-lain' && (
                 <label className="full">
                   Topik baru (opsional)
