@@ -468,6 +468,22 @@ export default function AspirasiTab({
                 <X size={18} />
               </button>
             </div>
+            <p
+              style={{
+                display: 'block',
+                width: '100%',
+                margin: '0 0 12px',
+                padding: '8px 10px',
+                background: '#f4e7b5',
+                color: '#0b1f3a',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                borderRadius: 6,
+                boxSizing: 'border-box',
+              }}
+            >
+              Layout v5: satu field per baris, lebar penuh
+            </p>
             <form
               onSubmit={saveItem}
               style={{
@@ -499,7 +515,7 @@ export default function AspirasiTab({
                   value={form.nama}
                   onChange={(e) => setForm({ ...form, nama: e.target.value })}
                   placeholder="Nama pengaju"
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                 />
               </div>
 
@@ -512,7 +528,7 @@ export default function AspirasiTab({
                   value={form.organisasi}
                   onChange={(e) => setForm({ ...form, organisasi: e.target.value })}
                   placeholder="Organisasi / komunitas (opsional)"
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                 />
               </div>
 
@@ -524,7 +540,7 @@ export default function AspirasiTab({
                   id="asp-topik"
                   value={form.topik}
                   onChange={(e) => setForm({ ...form, topik: e.target.value })}
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                 >
                   {allTopics.map((t) => (
                     <option key={t} value={t}>
@@ -543,7 +559,7 @@ export default function AspirasiTab({
                   value={form.wa}
                   onChange={(e) => setForm({ ...form, wa: e.target.value })}
                   placeholder="08xxxxxxxxxx"
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                 />
               </div>
 
@@ -557,7 +573,7 @@ export default function AspirasiTab({
                     value={form.customTopik}
                     onChange={(e) => setForm({ ...form, customTopik: e.target.value })}
                     placeholder="Contoh: Kesehatan, UMKM..."
-                    style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                    style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                   />
                 </div>
               )}
@@ -572,7 +588,7 @@ export default function AspirasiTab({
                   required
                   value={form.tanggal}
                   onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                 />
               </div>
 
@@ -587,7 +603,7 @@ export default function AspirasiTab({
                   value={form.aspirasi}
                   onChange={(e) => setForm({ ...form, aspirasi: e.target.value })}
                   placeholder="Isi aspirasi..."
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                 />
               </div>
 
@@ -601,7 +617,7 @@ export default function AspirasiTab({
                   value={form.tindakLanjut}
                   onChange={(e) => setForm({ ...form, tindakLanjut: e.target.value })}
                   placeholder="Langkah yang sudah / akan diambil"
-                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
+                  style={{ display: 'block', width: '100%', minWidth: '100%', boxSizing: 'border-box', border: '1px solid #d7dee8', borderRadius: 6, padding: '10px 11px', background: '#fff' }}
                 />
               </div>
 
