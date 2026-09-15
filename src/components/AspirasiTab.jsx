@@ -15,13 +15,40 @@ import { useEscapeClose } from '../hooks/useEscapeClose'
 
 const DEFAULT_TOPICS = ['ASN', 'Guru', 'Pertanahan', 'Lain-lain']
 
+function todayISO() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 const emptyForm = {
-  pengaju: '',
+  tanggal: todayISO(),
+  nama: '',
+  organisasi: '',
   wa: '',
   aspirasi: '',
   topik: 'ASN',
   customTopik: '',
   tindakLanjut: '',
+}
+
+/** Normalize legacy `pengaju` into nama/organisasi. */
+function resolveNama(item) {
+  if (item.nama) return item.nama
+  return item.pengaju || ''
+}
+
+function resolveOrganisasi(item) {
+  return item.organisasi || ''
+}
+
+function formatTanggal(iso) {
+  if (!iso) return ''
+  const [y, m, d] = String(iso).split('-')
+  if (!y || !m || !d) return iso
+  return `${d}/${m}/${y}`
 }
 
 function waLink(wa) {
@@ -55,20 +82,35 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
       .filter((i) => {
         if (!query.trim()) return true
         const q = query.toLowerCase()
+        const nama = resolveNama(i).toLowerCase()
+        const organisasi = resolveOrganisasi(i).toLowerCase()
         return (
-          i.pengaju.toLowerCase().includes(q) ||
-          i.aspirasi.toLowerCase().includes(q) ||
-          i.tindakLanjut.toLowerCase().includes(q) ||
-          i.topik.toLowerCase().includes(q) ||
-          String(i.wa || '').includes(q)
+          nama.includes(q) ||
+          organisasi.includes(q) ||
+          String(i.aspirasi || '')
+            .toLowerCase()
+            .includes(q) ||
+          String(i.tindakLanjut || '')
+            .toLowerCase()
+            .includes(q) ||
+          String(i.topik || '')
+            .toLowerCase()
+            .includes(q) ||
+          String(i.wa || '').includes(q) ||
+          String(i.tanggal || '').includes(q)
         )
       })
-      .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+      .sort((a, b) => {
+        const ta = a.tanggal || ''
+        const tb = b.tanggal || ''
+        if (ta && tb && ta !== tb) return tb.localeCompare(ta)
+        return (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0)
+      })
   }, [items, view, filterTopik, query])
 
   function openCreate() {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, tanggal: todayISO() })
     setShowForm(true)
   }
 
@@ -76,7 +118,9 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
     const known = allTopics.includes(item.topik)
     setEditingId(item.id)
     setForm({
-      pengaju: item.pengaju,
+      tanggal: item.tanggal || todayISO(),
+      nama: resolveNama(item),
+      organisasi: resolveOrganisasi(item),
       wa: item.wa || '',
       aspirasi: item.aspirasi,
       topik: known ? item.topik : 'Lain-lain',
@@ -100,39 +144,36 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
 
   function saveItem(e) {
     e.preventDefault()
-    if (!form.pengaju.trim() || !form.aspirasi.trim()) return
+    if (!form.nama.trim() || !form.aspirasi.trim() || !form.tanggal) return
 
     const topik = resolveTopik()
     const now = Date.now()
+    const payload = {
+      tanggal: form.tanggal,
+      nama: form.nama.trim(),
+      organisasi: form.organisasi.trim(),
+      wa: form.wa.trim(),
+      aspirasi: form.aspirasi.trim(),
+      topik,
+      tindakLanjut: form.tindakLanjut.trim(),
+      updatedAt: now,
+    }
 
     if (editingId) {
       setItems((prev) =>
-        prev.map((i) =>
-          i.id === editingId
-            ? {
-                ...i,
-                pengaju: form.pengaju.trim(),
-                wa: form.wa.trim(),
-                aspirasi: form.aspirasi.trim(),
-                topik,
-                tindakLanjut: form.tindakLanjut.trim(),
-                updatedAt: now,
-              }
-            : i,
-        ),
+        prev.map((i) => {
+          if (i.id !== editingId) return i
+          const { pengaju: _legacy, ...rest } = i
+          return { ...rest, ...payload }
+        }),
       )
     } else {
       setItems((prev) => [
         {
           id: uid(),
-          pengaju: form.pengaju.trim(),
-          wa: form.wa.trim(),
-          aspirasi: form.aspirasi.trim(),
-          topik,
-          tindakLanjut: form.tindakLanjut.trim(),
+          ...payload,
           archived: false,
           createdAt: now,
-          updatedAt: now,
         },
         ...prev,
       ])
@@ -140,7 +181,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
 
     setShowForm(false)
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, tanggal: todayISO() })
   }
 
   function toggleArchive(id, archived) {
@@ -214,7 +255,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari pengaju, aspirasi, topik..."
+            placeholder="Cari nama, organisasi, aspirasi, topik..."
           />
         </div>
 
@@ -259,7 +300,9 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
           <thead>
             <tr>
               <th style={{ width: 48 }}>Selesai</th>
-              <th>Pihak yang mengajukan</th>
+              <th style={{ width: 110 }}>Tanggal</th>
+              <th>Nama</th>
+              <th>Organisasi</th>
               <th>Aspirasi</th>
               <th>Topik</th>
               <th>Tindak lanjut</th>
@@ -269,7 +312,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="empty">
+                <td colSpan={8} className="empty">
                   {items.length === 0
                     ? 'Belum ada aspirasi. Klik "Tambah Aspirasi" untuk mencatat yang pertama.'
                     : 'Tidak ada hasil di filter ini. Ubah pencarian atau topik.'}
@@ -278,6 +321,8 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
             )}
             {filtered.map((item) => {
               const link = waLink(item.wa)
+              const nama = resolveNama(item)
+              const organisasi = resolveOrganisasi(item)
               return (
                 <tr key={item.id} className={item.archived ? 'row-archived' : ''}>
                   <td>
@@ -288,9 +333,16 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                       title={item.archived ? 'Kembalikan ke aktif' : 'Pindahkan ke arsip'}
                     />
                   </td>
+                  <td className="date-cell">
+                    {item.tanggal ? (
+                      formatTanggal(item.tanggal)
+                    ) : (
+                      <span className="muted">Belum diisi</span>
+                    )}
+                  </td>
                   <td>
                     <div className="pengaju">
-                      <strong>{item.pengaju}</strong>
+                      <strong>{nama || <span className="muted">Tanpa nama</span>}</strong>
                       {item.wa && (
                         <div className="wa-row">
                           {link ? (
@@ -305,6 +357,9 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                         </div>
                       )}
                     </div>
+                  </td>
+                  <td className="cell-wrap">
+                    {organisasi || <span className="muted">-</span>}
                   </td>
                   <td className="cell-wrap">{item.aspirasi}</td>
                   <td>
@@ -380,12 +435,12 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
             </div>
             <form onSubmit={saveItem} className="form-grid">
               <label>
-                Pihak yang mengajukan
+                Tanggal
                 <input
+                  type="date"
                   required
-                  value={form.pengaju}
-                  onChange={(e) => setForm({ ...form, pengaju: e.target.value })}
-                  placeholder="Nama / organisasi"
+                  value={form.tanggal}
+                  onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
                 />
               </label>
               <label>
@@ -394,6 +449,23 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                   value={form.wa}
                   onChange={(e) => setForm({ ...form, wa: e.target.value })}
                   placeholder="08xxxxxxxxxx"
+                />
+              </label>
+              <label>
+                Nama
+                <input
+                  required
+                  value={form.nama}
+                  onChange={(e) => setForm({ ...form, nama: e.target.value })}
+                  placeholder="Nama pengaju"
+                />
+              </label>
+              <label>
+                Organisasi
+                <input
+                  value={form.organisasi}
+                  onChange={(e) => setForm({ ...form, organisasi: e.target.value })}
+                  placeholder="Organisasi / komunitas (opsional)"
                 />
               </label>
               <label className="full">
@@ -455,8 +527,10 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
 }
 
 function slug(text) {
-  return String(text)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '') || 'lain'
+  return (
+    String(text)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || 'lain'
+  )
 }
