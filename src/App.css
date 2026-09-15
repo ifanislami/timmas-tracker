@@ -679,6 +679,19 @@
   min-width: 0;
 }
 
+.form-grid-stack {
+  grid-template-columns: 1fr;
+}
+
+.form-grid-stack label,
+.form-grid-stack .full,
+.form-grid-stack input,
+.form-grid-stack select,
+.form-grid-stack textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
