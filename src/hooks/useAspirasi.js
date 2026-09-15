@@ -37,7 +37,7 @@ export function useAspirasi() {
   const [error, setError] = useState(
     isSupabaseConfigured
       ? null
-      : 'Supabase belum dikonfigurasi. Isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY.',
+      : 'Supabase belum dikonfigurasi di build ini. Di Vercel → Settings → Environment Variables, tambah VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY untuk Production, lalu Redeploy. URL harus https://xxxx.supabase.co (tanpa /rest/v1).',
   )
   const [saving, setSaving] = useState(false)
 
