@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   BarChart3,
   ExternalLink,
@@ -10,6 +10,7 @@ import {
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, getISOWeek, getYear } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { uid } from '../hooks/useLocalStorage'
+import { useEscapeClose } from '../hooks/useEscapeClose'
 
 function InstagramIcon({ size = 16 }) {
   return (
@@ -229,6 +230,11 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
     return PLATFORMS.find((p) => p.key === key) || PLATFORMS[0]
   }
 
+  const closeMetricForm = useCallback(() => setShowMetricForm(false), [])
+  const closeClipForm = useCallback(() => setShowClipForm(false), [])
+  useEscapeClose(showMetricForm, closeMetricForm)
+  useEscapeClose(showClipForm, closeClipForm)
+
   return (
     <div className="tab-panel">
       <div className="panel-header">
@@ -267,10 +273,15 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
           <div className="stat-grid">
             {PLATFORMS.map(({ key, label, color, Icon }) => {
               const s = summaryByPlatform[key]
+              const empty = s.weeks === 0
               return (
-                <div key={key} className="stat-card" style={{ '--accent': color }}>
+                <div
+                  key={key}
+                  className={`stat-card${empty ? ' is-empty' : ''}`}
+                  style={{ '--accent': color }}
+                >
                   <div className="stat-head">
-                    <Icon size={18} />
+                    <Icon size={18} aria-hidden="true" />
                     <strong>{label}</strong>
                   </div>
                   <div className="stat-metrics">
@@ -291,7 +302,11 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                       <span className="stat-value">{fmt(s.followers)}</span>
                     </div>
                   </div>
-                  <div className="stat-foot">{s.weeks} entri minggu di bulan ini</div>
+                  <div className="stat-foot">
+                    {empty
+                      ? 'Belum ada entri minggu di bulan ini'
+                      : `${s.weeks} entri minggu di bulan ini`}
+                  </div>
                 </div>
               )
             })}
@@ -314,7 +329,8 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                 <tbody>
                   {PLATFORMS.map(({ key, label }) => {
                     const s = summaryByPlatform[key]
-                    const rate = s.reach > 0 ? ((s.engagement / s.reach) * 100).toFixed(2) : '—'
+                    const rate =
+                      s.reach > 0 ? `${((s.engagement / s.reach) * 100).toFixed(2)}%` : 'n/a'
                     return (
                       <tr key={key}>
                         <td>{label}</td>
@@ -322,7 +338,7 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                         <td>{fmt(s.reach)}</td>
                         <td>{fmt(s.engagement)}</td>
                         <td>{fmt(s.followers)}</td>
-                        <td>{rate === '—' ? rate : `${rate}%`}</td>
+                        <td>{rate}</td>
                       </tr>
                     )
                   })}
@@ -370,13 +386,25 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                         <td>{fmt(m.reach)}</td>
                         <td>{fmt(m.engagement)}</td>
                         <td>{fmt(m.followers)}</td>
-                        <td className="cell-wrap">{m.notes || <span className="muted">—</span>}</td>
+                        <td className="cell-wrap">
+                          {m.notes || <span className="muted">Tidak ada</span>}
+                        </td>
                         <td>
                           <div className="row-actions">
-                            <button type="button" className="icon-btn" onClick={() => openEditMetric(m)}>
+                            <button
+                              type="button"
+                              className="icon-btn"
+                              aria-label="Edit data mingguan"
+                              onClick={() => openEditMetric(m)}
+                            >
                               <Pencil size={15} />
                             </button>
-                            <button type="button" className="icon-btn danger" onClick={() => removeMetric(m.id)}>
+                            <button
+                              type="button"
+                              className="icon-btn danger"
+                              aria-label="Hapus data mingguan"
+                              onClick={() => removeMetric(m.id)}
+                            >
                               <Trash2 size={15} />
                             </button>
                           </div>
@@ -450,7 +478,7 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                       <td>
                         {c.postedAt
                           ? format(parseISO(c.postedAt), 'd MMM yyyy', { locale: localeId })
-                          : '—'}
+                          : <span className="muted">Belum diisi</span>}
                       </td>
                       <td>{fmt(c.views)}</td>
                       <td>
@@ -459,18 +487,28 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                       <td>
                         {c.url ? (
                           <a href={c.url} target="_blank" rel="noreferrer" className="wa-link">
-                            Buka <ExternalLink size={12} />
+                            Buka <ExternalLink size={12} aria-hidden="true" />
                           </a>
                         ) : (
-                          <span className="muted">—</span>
+                          <span className="muted">Tidak ada</span>
                         )}
                       </td>
                       <td>
                         <div className="row-actions">
-                          <button type="button" className="icon-btn" onClick={() => openEditClip(c)}>
+                          <button
+                            type="button"
+                            className="icon-btn"
+                            aria-label="Edit clip"
+                            onClick={() => openEditClip(c)}
+                          >
                             <Pencil size={15} />
                           </button>
-                          <button type="button" className="icon-btn danger" onClick={() => removeClip(c.id)}>
+                          <button
+                            type="button"
+                            className="icon-btn danger"
+                            aria-label="Hapus clip"
+                            onClick={() => removeClip(c.id)}
+                          >
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -485,11 +523,19 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
       )}
 
       {showMetricForm && (
-        <div className="modal-backdrop" onClick={() => setShowMetricForm(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={closeMetricForm} role="presentation">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="metric-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h3>{editingMetricId ? 'Edit Data Mingguan' : 'Input Data Mingguan'}</h3>
-              <button type="button" className="icon-btn" onClick={() => setShowMetricForm(false)}>
+              <h3 id="metric-modal-title">
+                {editingMetricId ? 'Edit Data Mingguan' : 'Input Data Mingguan'}
+              </h3>
+              <button type="button" className="icon-btn" aria-label="Tutup" onClick={closeMetricForm}>
                 <X size={18} />
               </button>
             </div>
@@ -561,7 +607,7 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                 />
               </label>
               <div className="modal-actions full">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowMetricForm(false)}>
+                <button type="button" className="btn btn-ghost" onClick={closeMetricForm}>
                   Batal
                 </button>
                 <button type="submit" className="btn btn-primary">
@@ -574,11 +620,17 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
       )}
 
       {showClipForm && (
-        <div className="modal-backdrop" onClick={() => setShowClipForm(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={closeClipForm} role="presentation">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clip-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h3>{editingClipId ? 'Edit Clip' : 'Tambah Clip'}</h3>
-              <button type="button" className="icon-btn" onClick={() => setShowClipForm(false)}>
+              <h3 id="clip-modal-title">{editingClipId ? 'Edit Clip' : 'Tambah Clip'}</h3>
+              <button type="button" className="icon-btn" aria-label="Tutup" onClick={closeClipForm}>
                 <X size={18} />
               </button>
             </div>
@@ -659,7 +711,7 @@ export default function MultimediaTab({ metrics, setMetrics, clips, setClips }) 
                 />
               </label>
               <div className="modal-actions full">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowClipForm(false)}>
+                <button type="button" className="btn btn-ghost" onClick={closeClipForm}>
                   Batal
                 </button>
                 <button type="submit" className="btn btn-primary">

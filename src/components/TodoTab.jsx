@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   CalendarDays,
   CheckCircle2,
@@ -12,6 +12,7 @@ import {
 import { format, parseISO, isPast, isToday, compareAsc } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
 import { uid } from '../hooks/useLocalStorage'
+import { useEscapeClose } from '../hooks/useEscapeClose'
 
 const emptyTask = {
   title: '',
@@ -165,6 +166,11 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
   const openCount = tasks.filter((t) => t.status !== 'Done').length
   const upcomingEvents = events.filter((e) => e.status === 'Upcoming' || e.status === 'Ongoing').length
 
+  const closeTaskForm = useCallback(() => setShowTaskForm(false), [])
+  const closeEventForm = useCallback(() => setShowEventForm(false), [])
+  useEscapeClose(showTaskForm, closeTaskForm)
+  useEscapeClose(showEventForm, closeEventForm)
+
   return (
     <div className="tab-panel">
       <div className="panel-header">
@@ -219,7 +225,16 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
           </div>
 
           <div className="card-list">
-            {sortedTasks.length === 0 && <div className="empty-card">Belum ada pekerjaan.</div>}
+            {sortedTasks.length === 0 && (
+              <div className="empty-card">
+                <strong>Belum ada pekerjaan</strong>
+                <span>
+                  {tasks.length === 0
+                    ? 'Klik "Tambah Pekerjaan" untuk membuat item pertama.'
+                    : 'Tidak ada item dengan filter status ini.'}
+                </span>
+              </div>
+            )}
             {sortedTasks.map((task) => {
               const overdue =
                 task.dueDate &&
@@ -233,6 +248,7 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
                     className="check-btn"
                     onClick={() => toggleDone(task)}
                     title={task.status === 'Done' ? 'Tandai belum selesai' : 'Tandai selesai'}
+                    aria-label={task.status === 'Done' ? 'Tandai belum selesai' : 'Tandai selesai'}
                   >
                     {task.status === 'Done' ? <CheckCircle2 size={22} /> : <Circle size={22} />}
                   </button>
@@ -259,10 +275,20 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
                     </div>
                   </div>
                   <div className="row-actions">
-                    <button type="button" className="icon-btn" onClick={() => openEditTask(task)}>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      aria-label="Edit pekerjaan"
+                      onClick={() => openEditTask(task)}
+                    >
                       <Pencil size={15} />
                     </button>
-                    <button type="button" className="icon-btn danger" onClick={() => removeTask(task.id)}>
+                    <button
+                      type="button"
+                      className="icon-btn danger"
+                      aria-label="Hapus pekerjaan"
+                      onClick={() => removeTask(task.id)}
+                    >
                       <Trash2 size={15} />
                     </button>
                   </div>
@@ -275,12 +301,17 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
 
       {subTab === 'events' && (
         <div className="card-list">
-          {sortedEvents.length === 0 && <div className="empty-card">Belum ada event besar.</div>}
+          {sortedEvents.length === 0 && (
+            <div className="empty-card">
+              <strong>Belum ada event besar</strong>
+              <span>Klik "Tambah Event" untuk menjadwalkan kegiatan.</span>
+            </div>
+          )}
           {sortedEvents.map((ev) => (
             <article key={ev.id} className="event-card">
               <div className="event-date">
                 <span className="day">
-                  {ev.startDate ? format(parseISO(ev.startDate), 'd', { locale: localeId }) : '—'}
+                  {ev.startDate ? format(parseISO(ev.startDate), 'd', { locale: localeId }) : '-'}
                 </span>
                 <span className="month">
                   {ev.startDate ? format(parseISO(ev.startDate), 'MMM yyyy', { locale: localeId }) : ''}
@@ -293,22 +324,32 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
                 </div>
                 {ev.description && <p>{ev.description}</p>}
                 <div className="todo-meta">
-                  {ev.location && <span>📍 {ev.location}</span>}
+                  {ev.location && <span>Lokasi: {ev.location}</span>}
                   {ev.startDate && (
                     <span>
                       {format(parseISO(ev.startDate), 'd MMM yyyy', { locale: localeId })}
                       {ev.endDate && ev.endDate !== ev.startDate
-                        ? ` – ${format(parseISO(ev.endDate), 'd MMM yyyy', { locale: localeId })}`
+                        ? ` s.d. ${format(parseISO(ev.endDate), 'd MMM yyyy', { locale: localeId })}`
                         : ''}
                     </span>
                   )}
                 </div>
               </div>
               <div className="row-actions">
-                <button type="button" className="icon-btn" onClick={() => openEditEvent(ev)}>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label="Edit event"
+                  onClick={() => openEditEvent(ev)}
+                >
                   <Pencil size={15} />
                 </button>
-                <button type="button" className="icon-btn danger" onClick={() => removeEvent(ev.id)}>
+                <button
+                  type="button"
+                  className="icon-btn danger"
+                  aria-label="Hapus event"
+                  onClick={() => removeEvent(ev.id)}
+                >
                   <Trash2 size={15} />
                 </button>
               </div>
@@ -318,11 +359,17 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
       )}
 
       {showTaskForm && (
-        <div className="modal-backdrop" onClick={() => setShowTaskForm(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={closeTaskForm} role="presentation">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="task-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h3>{editingTaskId ? 'Edit Pekerjaan' : 'Tambah Pekerjaan'}</h3>
-              <button type="button" className="icon-btn" onClick={() => setShowTaskForm(false)}>
+              <h3 id="task-modal-title">{editingTaskId ? 'Edit Pekerjaan' : 'Tambah Pekerjaan'}</h3>
+              <button type="button" className="icon-btn" aria-label="Tutup" onClick={closeTaskForm}>
                 <X size={18} />
               </button>
             </div>
@@ -378,7 +425,7 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
                 </select>
               </label>
               <div className="modal-actions full">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowTaskForm(false)}>
+                <button type="button" className="btn btn-ghost" onClick={closeTaskForm}>
                   Batal
                 </button>
                 <button type="submit" className="btn btn-primary">
@@ -391,11 +438,17 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
       )}
 
       {showEventForm && (
-        <div className="modal-backdrop" onClick={() => setShowEventForm(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={closeEventForm} role="presentation">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="event-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h3>{editingEventId ? 'Edit Event' : 'Tambah Event Besar'}</h3>
-              <button type="button" className="icon-btn" onClick={() => setShowEventForm(false)}>
+              <h3 id="event-modal-title">{editingEventId ? 'Edit Event' : 'Tambah Event Besar'}</h3>
+              <button type="button" className="icon-btn" aria-label="Tutup" onClick={closeEventForm}>
                 <X size={18} />
               </button>
             </div>
@@ -455,7 +508,7 @@ export default function TodoTab({ tasks, setTasks, events, setEvents }) {
                 </select>
               </label>
               <div className="modal-actions full">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowEventForm(false)}>
+                <button type="button" className="btn btn-ghost" onClick={closeEventForm}>
                   Batal
                 </button>
                 <button type="submit" className="btn btn-primary">

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Archive,
   ArchiveRestore,
@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import { uid } from '../hooks/useLocalStorage'
+import { useEscapeClose } from '../hooks/useEscapeClose'
 
 const DEFAULT_TOPICS = ['ASN', 'Guru', 'Pertanahan', 'Lain-lain']
 
@@ -172,6 +173,12 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
   const aktifCount = items.filter((i) => !i.archived).length
   const arsipCount = items.filter((i) => i.archived).length
 
+  const closeForm = useCallback(() => {
+    setShowForm(false)
+    setEditingId(null)
+  }, [])
+  useEscapeClose(showForm, closeForm)
+
   return (
     <div className="tab-panel">
       <div className="panel-header">
@@ -263,7 +270,9 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="empty">
-                  Belum ada data di tampilan ini.
+                  {items.length === 0
+                    ? 'Belum ada aspirasi. Klik "Tambah Aspirasi" untuk mencatat yang pertama.'
+                    : 'Tidak ada hasil di filter ini. Ubah pencarian atau topik.'}
                 </td>
               </tr>
             )}
@@ -301,10 +310,18 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                   <td>
                     <span className={`badge topic-${slug(item.topik)}`}>{item.topik}</span>
                   </td>
-                  <td className="cell-wrap">{item.tindakLanjut || <span className="muted">—</span>}</td>
+                  <td className="cell-wrap">
+                    {item.tindakLanjut || <span className="muted">Belum ada</span>}
+                  </td>
                   <td>
                     <div className="row-actions">
-                      <button type="button" className="icon-btn" title="Edit" onClick={() => openEdit(item)}>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        title="Edit"
+                        aria-label="Edit aspirasi"
+                        onClick={() => openEdit(item)}
+                      >
                         <Pencil size={15} />
                       </button>
                       {item.archived ? (
@@ -312,6 +329,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                           type="button"
                           className="icon-btn"
                           title="Kembalikan"
+                          aria-label="Kembalikan dari arsip"
                           onClick={() => toggleArchive(item.id, false)}
                         >
                           <ArchiveRestore size={15} />
@@ -321,6 +339,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                           type="button"
                           className="icon-btn"
                           title="Arsipkan"
+                          aria-label="Arsipkan aspirasi"
                           onClick={() => toggleArchive(item.id, true)}
                         >
                           <Archive size={15} />
@@ -330,6 +349,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                         type="button"
                         className="icon-btn danger"
                         title="Hapus"
+                        aria-label="Hapus aspirasi"
                         onClick={() => removeItem(item.id)}
                       >
                         <Trash2 size={15} />
@@ -344,11 +364,17 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
       </div>
 
       {showForm && (
-        <div className="modal-backdrop" onClick={() => setShowForm(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={closeForm} role="presentation">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="aspirasi-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h3>{editingId ? 'Edit Aspirasi' : 'Tambah Aspirasi'}</h3>
-              <button type="button" className="icon-btn" onClick={() => setShowForm(false)}>
+              <h3 id="aspirasi-modal-title">{editingId ? 'Edit Aspirasi' : 'Tambah Aspirasi'}</h3>
+              <button type="button" className="icon-btn" aria-label="Tutup" onClick={closeForm}>
                 <X size={18} />
               </button>
             </div>
@@ -413,7 +439,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                 />
               </label>
               <div className="modal-actions full">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>
+                <button type="button" className="btn btn-ghost" onClick={closeForm}>
                   Batal
                 </button>
                 <button type="submit" className="btn btn-primary">

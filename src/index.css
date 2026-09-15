@@ -1,9 +1,10 @@
 :root {
+  /* Navy + gold identity; system sans for Windows office use (DESIGN.md). */
   font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #0f172a;
-  background: #eef2f7;
+  background: #e8edf4;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -14,13 +15,17 @@
   --gold: #c9a227;
   --gold-soft: #f4e7b5;
   --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --border: #e2e8f0;
-  --muted: #64748b;
-  --danger: #dc2626;
-  --success: #059669;
-  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  --radius: 14px;
+  --surface-2: #f4f7fb;
+  --border: #d7dee8;
+  --muted: #475569;
+  --danger: #b91c1c;
+  --success: #047857;
+  --focus: #c9a227;
+  --shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --tap: 44px;
 }
 
 * {
@@ -36,10 +41,8 @@ body,
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(circle at top right, rgba(201, 162, 39, 0.12), transparent 28%),
-    radial-gradient(circle at top left, rgba(20, 54, 95, 0.12), transparent 32%),
-    #eef2f7;
+  /* Flat cool wash: identity without full-page glow orbs (R-01). */
+  background: #e8edf4;
 }
 
 button,
@@ -51,4 +54,17 @@ textarea {
 
 a {
   color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
 }
