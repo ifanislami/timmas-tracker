@@ -468,31 +468,63 @@ export default function AspirasiTab({
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={saveItem} className="aspirasi-form">
-              <p className="form-section-label">Pihak yang mengajukan</p>
-              <label>
-                Nama
+            <form
+              onSubmit={saveItem}
+              style={{
+                display: 'block',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              <p
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  margin: '0 0 4px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  color: 'var(--navy)',
+                }}
+              >
+                Pihak yang mengajukan
+              </p>
+
+              <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                <label htmlFor="asp-nama" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                  Nama
+                </label>
                 <input
+                  id="asp-nama"
                   required
                   value={form.nama}
                   onChange={(e) => setForm({ ...form, nama: e.target.value })}
                   placeholder="Nama pengaju"
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                 />
-              </label>
-              <label>
-                Organisasi
+              </div>
+
+              <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                <label htmlFor="asp-org" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                  Organisasi
+                </label>
                 <input
-                  required={false}
+                  id="asp-org"
                   value={form.organisasi}
                   onChange={(e) => setForm({ ...form, organisasi: e.target.value })}
                   placeholder="Organisasi / komunitas (opsional)"
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                 />
-              </label>
-              <label>
-                Topik
+              </div>
+
+              <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                <label htmlFor="asp-topik" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                  Topik
+                </label>
                 <select
+                  id="asp-topik"
                   value={form.topik}
                   onChange={(e) => setForm({ ...form, topik: e.target.value })}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                 >
                   {allTopics.map((t) => (
                     <option key={t} value={t}>
@@ -500,59 +532,85 @@ export default function AspirasiTab({
                     </option>
                   ))}
                 </select>
-              </label>
-              <label>
-                Nomor WhatsApp
+              </div>
+
+              <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                <label htmlFor="asp-wa" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                  Nomor WhatsApp
+                </label>
                 <input
+                  id="asp-wa"
                   value={form.wa}
                   onChange={(e) => setForm({ ...form, wa: e.target.value })}
                   placeholder="08xxxxxxxxxx"
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                 />
-              </label>
+              </div>
+
               {form.topik === 'Lain-lain' && (
-                <label>
-                  Topik baru (opsional)
+                <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                  <label htmlFor="asp-topik-baru" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                    Topik baru (opsional)
+                  </label>
                   <input
+                    id="asp-topik-baru"
                     value={form.customTopik}
                     onChange={(e) => setForm({ ...form, customTopik: e.target.value })}
                     placeholder="Contoh: Kesehatan, UMKM..."
+                    style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                   />
-                </label>
+                </div>
               )}
-              <label>
-                Waktu
+
+              <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                <label htmlFor="asp-waktu" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                  Waktu
+                </label>
                 <input
+                  id="asp-waktu"
                   type="date"
                   required
                   value={form.tanggal}
                   onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                 />
-              </label>
-              <label>
-                Aspirasi
+              </div>
+
+              <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                <label htmlFor="asp-isi" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                  Aspirasi
+                </label>
                 <textarea
+                  id="asp-isi"
                   required
                   rows={3}
                   value={form.aspirasi}
                   onChange={(e) => setForm({ ...form, aspirasi: e.target.value })}
                   placeholder="Isi aspirasi..."
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                 />
-              </label>
-              <label>
-                Tindak lanjut
+              </div>
+
+              <div style={{ display: 'block', width: '100%', marginBottom: 12 }}>
+                <label htmlFor="asp-tl" style={{ display: 'block', width: '100%', marginBottom: 6, fontSize: '0.85rem', fontWeight: 600 }}>
+                  Tindak lanjut
+                </label>
                 <textarea
+                  id="asp-tl"
                   rows={2}
                   value={form.tindakLanjut}
                   onChange={(e) => setForm({ ...form, tindakLanjut: e.target.value })}
                   placeholder="Langkah yang sudah / akan diambil"
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box' }}
                 />
-              </label>
+              </div>
+
               {actionError && (
-                <p className="muted" role="alert" style={{ color: 'var(--danger)' }}>
+                <p role="alert" style={{ color: 'var(--danger)', margin: '0 0 12px' }}>
                   {actionError}
                 </p>
               )}
-              <div className="modal-actions">
+              <div className="modal-actions" style={{ display: 'flex', width: '100%', justifyContent: 'flex-end', gap: 8 }}>
                 <button type="button" className="btn btn-ghost" onClick={closeForm} disabled={saving}>
                   Batal
                 </button>
