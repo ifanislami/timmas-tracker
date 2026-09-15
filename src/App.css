@@ -683,13 +683,54 @@
   grid-template-columns: 1fr;
 }
 
-.form-grid-stack label,
-.form-grid-stack .full,
-.form-grid-stack input,
-.form-grid-stack select,
-.form-grid-stack textarea {
+/* Form Aspirasi: selalu satu kolom, field penuh lebar modal */
+.aspirasi-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 100%;
-  max-width: 100%;
+}
+
+.aspirasi-form .form-section-label {
+  margin: 0;
+}
+
+.aspirasi-form label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.aspirasi-form input,
+.aspirasi-form select,
+.aspirasi-form textarea {
+  display: block;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 11px;
+  min-height: var(--tap);
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.aspirasi-form textarea {
+  min-height: 0;
+  resize: vertical;
+}
+
+.aspirasi-form .modal-actions {
+  width: 100%;
+  margin-top: 4px;
 }
 
 .modal-actions {

@@ -468,9 +468,9 @@ export default function AspirasiTab({
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={saveItem} className="form-grid form-grid-stack">
-              <p className="form-section-label full">Pihak yang mengajukan</p>
-              <label className="full">
+            <form onSubmit={saveItem} className="aspirasi-form">
+              <p className="form-section-label">Pihak yang mengajukan</p>
+              <label>
                 Nama
                 <input
                   required
@@ -479,15 +479,16 @@ export default function AspirasiTab({
                   placeholder="Nama pengaju"
                 />
               </label>
-              <label className="full">
+              <label>
                 Organisasi
                 <input
+                  required={false}
                   value={form.organisasi}
                   onChange={(e) => setForm({ ...form, organisasi: e.target.value })}
                   placeholder="Organisasi / komunitas (opsional)"
                 />
               </label>
-              <label className="full">
+              <label>
                 Topik
                 <select
                   value={form.topik}
@@ -500,7 +501,7 @@ export default function AspirasiTab({
                   ))}
                 </select>
               </label>
-              <label className="full">
+              <label>
                 Nomor WhatsApp
                 <input
                   value={form.wa}
@@ -509,7 +510,7 @@ export default function AspirasiTab({
                 />
               </label>
               {form.topik === 'Lain-lain' && (
-                <label className="full">
+                <label>
                   Topik baru (opsional)
                   <input
                     value={form.customTopik}
@@ -518,7 +519,7 @@ export default function AspirasiTab({
                   />
                 </label>
               )}
-              <label className="full">
+              <label>
                 Waktu
                 <input
                   type="date"
@@ -527,7 +528,7 @@ export default function AspirasiTab({
                   onChange={(e) => setForm({ ...form, tanggal: e.target.value })}
                 />
               </label>
-              <label className="full">
+              <label>
                 Aspirasi
                 <textarea
                   required
@@ -537,7 +538,7 @@ export default function AspirasiTab({
                   placeholder="Isi aspirasi..."
                 />
               </label>
-              <label className="full">
+              <label>
                 Tindak lanjut
                 <textarea
                   rows={2}
@@ -547,11 +548,11 @@ export default function AspirasiTab({
                 />
               </label>
               {actionError && (
-                <p className="full muted" role="alert" style={{ color: 'var(--danger)' }}>
+                <p className="muted" role="alert" style={{ color: 'var(--danger)' }}>
                   {actionError}
                 </p>
               )}
-              <div className="modal-actions full">
+              <div className="modal-actions">
                 <button type="button" className="btn btn-ghost" onClick={closeForm} disabled={saving}>
                   Batal
                 </button>
