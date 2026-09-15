@@ -637,9 +637,10 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 14px;
-  align-items: start;
+  /* Selalu satu kolom: jangan pernah 2 kolom berdampingan */
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: stretch;
 }
 
 .form-grid label {
@@ -674,8 +675,8 @@
 .form-row {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 14px;
+  grid-template-columns: 1fr;
+  gap: 12px;
   min-width: 0;
 }
 

@@ -463,7 +463,9 @@ export default function AspirasiTab({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h3 id="aspirasi-modal-title">{editingId ? 'Edit Aspirasi' : 'Tambah Aspirasi'}</h3>
+              <h3 id="aspirasi-modal-title">
+                {editingId ? 'Edit Aspirasi' : 'Tambah Aspirasi'} — 1 kolom
+              </h3>
               <button type="button" className="icon-btn" aria-label="Tutup" onClick={closeForm}>
                 <X size={18} />
               </button>
