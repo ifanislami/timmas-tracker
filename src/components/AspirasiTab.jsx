@@ -14,7 +14,6 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
-import { uid } from '../hooks/useLocalStorage'
 import { useEscapeClose } from '../hooks/useEscapeClose'
 
 const DEFAULT_TOPICS = ['ASN', 'Guru', 'Pertanahan', 'Lain-lain']
@@ -63,7 +62,19 @@ function waLink(wa) {
   return `https://wa.me/${normalized}`
 }
 
-export default function AspirasiTab({ items, setItems, customTopics, setCustomTopics }) {
+export default function AspirasiTab({
+  items,
+  customTopics,
+  setCustomTopics,
+  loading,
+  saving,
+  error,
+  onCreate,
+  onUpdate,
+  onSetArchived,
+  onRemove,
+  onRefresh,
+}) {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -71,6 +82,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
   const [query, setQuery] = useState('')
   const [filterTopik, setFilterTopik] = useState('Semua')
   const [newTopic, setNewTopic] = useState('')
+  const [actionError, setActionError] = useState(null)
 
   const allTopics = useMemo(
     () => [...DEFAULT_TOPICS.filter((t) => t !== 'Lain-lain'), ...customTopics, 'Lain-lain'],
@@ -114,6 +126,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
   function openCreate() {
     setEditingId(null)
     setForm({ ...emptyForm, tanggal: todayISO() })
+    setActionError(null)
     setShowForm(true)
   }
 
@@ -130,6 +143,7 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
       customTopik: known ? '' : item.topik,
       tindakLanjut: item.tindakLanjut || '',
     })
+    setActionError(null)
     setShowForm(true)
   }
 
@@ -145,12 +159,11 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
     return form.topik
   }
 
-  function saveItem(e) {
+  async function saveItem(e) {
     e.preventDefault()
     if (!form.nama.trim() || !form.aspirasi.trim() || !form.tanggal) return
 
     const topik = resolveTopik()
-    const now = Date.now()
     const payload = {
       tanggal: form.tanggal,
       nama: form.nama.trim(),
@@ -159,49 +172,49 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
       aspirasi: form.aspirasi.trim(),
       topik,
       tindakLanjut: form.tindakLanjut.trim(),
-      updatedAt: now,
     }
 
-    if (editingId) {
-      setItems((prev) =>
-        prev.map((i) => {
-          if (i.id !== editingId) return i
-          const { pengaju: _legacy, ...rest } = i
-          return { ...rest, ...payload }
-        }),
-      )
-    } else {
-      setItems((prev) => [
-        {
-          id: uid(),
-          ...payload,
-          archived: false,
-          createdAt: now,
-        },
-        ...prev,
-      ])
+    setActionError(null)
+    try {
+      if (editingId) {
+        await onUpdate(editingId, payload)
+      } else {
+        await onCreate(payload)
+      }
+      setShowForm(false)
+      setEditingId(null)
+      setForm({ ...emptyForm, tanggal: todayISO() })
+    } catch (err) {
+      setActionError(err?.message || 'Gagal menyimpan ke Supabase.')
     }
-
-    setShowForm(false)
-    setEditingId(null)
-    setForm({ ...emptyForm, tanggal: todayISO() })
   }
 
-  function markSelesai(id) {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, archived: true, updatedAt: Date.now() } : i)),
-    )
+  async function markSelesai(id) {
+    setActionError(null)
+    try {
+      await onSetArchived(id, true)
+    } catch (err) {
+      setActionError(err?.message || 'Gagal menandai selesai.')
+    }
   }
 
-  function markAktif(id) {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, archived: false, updatedAt: Date.now() } : i)),
-    )
+  async function markAktif(id) {
+    setActionError(null)
+    try {
+      await onSetArchived(id, false)
+    } catch (err) {
+      setActionError(err?.message || 'Gagal mengaktifkan kembali.')
+    }
   }
 
-  function removeItem(id) {
+  async function removeItem(id) {
     if (!confirm('Hapus aspirasi ini?')) return
-    setItems((prev) => prev.filter((i) => i.id !== id))
+    setActionError(null)
+    try {
+      await onRemove(id)
+    } catch (err) {
+      setActionError(err?.message || 'Gagal menghapus.')
+    }
   }
 
   function addCustomTopic() {
@@ -234,12 +247,28 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
       <div className="panel-header">
         <div>
           <h2>Aspirasi</h2>
-          <p className="muted">Catat aspirasi konstituen, topik, dan tindak lanjut.</p>
+          <p className="muted">Data tersimpan di Supabase (bukan hanya browser lokal).</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={openCreate}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={openCreate}
+          disabled={Boolean(error) || loading}
+        >
           <Plus size={16} /> Tambah Aspirasi
         </button>
       </div>
+
+      {(error || actionError) && (
+        <div className="flash flash-error" role="alert">
+          <p>{actionError || error}</p>
+          {onRefresh ? (
+            <button type="button" className="btn btn-ghost" onClick={onRefresh} disabled={loading}>
+              Coba lagi
+            </button>
+          ) : null}
+        </div>
+      )}
 
       <div className="toolbar">
         <div className="segmented">
@@ -304,114 +333,125 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
         </div>
       </div>
 
-      <div className="aspirasi-list">
-        {filtered.length === 0 && (
-          <div className="empty-card">
-            <strong>
-              {items.length === 0 ? 'Belum ada aspirasi' : 'Tidak ada hasil di filter ini'}
-            </strong>
-            <span>
-              {items.length === 0
-                ? 'Klik "Tambah Aspirasi" untuk mencatat yang pertama.'
-                : 'Ubah pencarian atau topik.'}
-            </span>
-          </div>
-        )}
+      {loading ? (
+        <div className="empty-card" role="status">
+          <strong>Memuat aspirasi…</strong>
+          <span>Mengambil data dari Supabase.</span>
+        </div>
+      ) : (
+        <div className="aspirasi-list">
+          {filtered.length === 0 && (
+            <div className="empty-card">
+              <strong>
+                {items.length === 0 ? 'Belum ada aspirasi' : 'Tidak ada hasil di filter ini'}
+              </strong>
+              <span>
+                {items.length === 0
+                  ? 'Klik "Tambah Aspirasi" untuk mencatat yang pertama.'
+                  : 'Ubah pencarian atau topik.'}
+              </span>
+            </div>
+          )}
 
-        {filtered.map((item) => {
-          const link = waLink(item.wa)
-          const nama = resolveNama(item)
-          const organisasi = resolveOrganisasi(item)
-          return (
-            <article
-              key={item.id}
-              className={`aspirasi-card${item.archived ? ' is-archived' : ''}`}
-            >
-              <div className="aspirasi-row">
-                <span className="aspirasi-ico" title="Pihak yang mengajukan" aria-hidden="true">
-                  <UserRound size={16} />
-                </span>
-                <div className="aspirasi-row-body aspirasi-party">
-                  <strong>{nama || 'Tanpa nama'}</strong>
-                  {organisasi ? <span className="aspirasi-org">{organisasi}</span> : null}
-                  <span className={`badge topic-${slug(item.topik)}`} title="Topik">
-                    <Tag size={12} aria-hidden="true" /> {item.topik}
+          {filtered.map((item) => {
+            const link = waLink(item.wa)
+            const nama = resolveNama(item)
+            const organisasi = resolveOrganisasi(item)
+            return (
+              <article
+                key={item.id}
+                className={`aspirasi-card${item.archived ? ' is-archived' : ''}`}
+              >
+                <div className="aspirasi-row">
+                  <span className="aspirasi-ico" title="Pihak yang mengajukan" aria-hidden="true">
+                    <UserRound size={16} />
                   </span>
+                  <div className="aspirasi-row-body aspirasi-party">
+                    <strong>{nama || 'Tanpa nama'}</strong>
+                    {organisasi ? <span className="aspirasi-org">{organisasi}</span> : null}
+                    <span className={`badge topic-${slug(item.topik)}`} title="Topik">
+                      <Tag size={12} aria-hidden="true" /> {item.topik}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="aspirasi-row">
-                <span className="aspirasi-ico" title="Waktu" aria-hidden="true">
-                  <CalendarDays size={16} />
-                </span>
-                <div className="aspirasi-row-body aspirasi-meta">
-                  <span>{item.tanggal ? formatTanggal(item.tanggal) : 'Belum diisi'}</span>
-                  {item.wa ? (
-                    link ? (
-                      <a href={link} target="_blank" rel="noreferrer" className="wa-link" title="WhatsApp">
-                        <MessageCircle size={14} aria-hidden="true" />
-                        {item.wa}
-                      </a>
-                    ) : (
-                      <span className="muted">{item.wa}</span>
-                    )
-                  ) : null}
+                <div className="aspirasi-row">
+                  <span className="aspirasi-ico" title="Waktu" aria-hidden="true">
+                    <CalendarDays size={16} />
+                  </span>
+                  <div className="aspirasi-row-body aspirasi-meta">
+                    <span>{item.tanggal ? formatTanggal(item.tanggal) : 'Belum diisi'}</span>
+                    {item.wa ? (
+                      link ? (
+                        <a href={link} target="_blank" rel="noreferrer" className="wa-link" title="WhatsApp">
+                          <MessageCircle size={14} aria-hidden="true" />
+                          {item.wa}
+                        </a>
+                      ) : (
+                        <span className="muted">{item.wa}</span>
+                      )
+                    ) : null}
+                  </div>
                 </div>
-              </div>
 
-              <div className="aspirasi-row">
-                <span className="aspirasi-ico" title="Aspirasi" aria-hidden="true">
-                  <MessageSquareText size={16} />
-                </span>
-                <div className="aspirasi-row-body cell-wrap">{item.aspirasi}</div>
-              </div>
-
-              <div className="aspirasi-row">
-                <span className="aspirasi-ico" title="Tindak lanjut" aria-hidden="true">
-                  <ClipboardList size={16} />
-                </span>
-                <div className="aspirasi-row-body cell-wrap">
-                  {item.tindakLanjut || <span className="muted">Belum ada</span>}
+                <div className="aspirasi-row">
+                  <span className="aspirasi-ico" title="Aspirasi" aria-hidden="true">
+                    <MessageSquareText size={16} />
+                  </span>
+                  <div className="aspirasi-row-body cell-wrap">{item.aspirasi}</div>
                 </div>
-              </div>
 
-              <div className="aspirasi-actions">
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => openEdit(item)}
-                >
-                  <Pencil size={15} aria-hidden="true" /> Edit
-                </button>
-                {item.archived ? (
+                <div className="aspirasi-row">
+                  <span className="aspirasi-ico" title="Tindak lanjut" aria-hidden="true">
+                    <ClipboardList size={16} />
+                  </span>
+                  <div className="aspirasi-row-body cell-wrap">
+                    {item.tindakLanjut || <span className="muted">Belum ada</span>}
+                  </div>
+                </div>
+
+                <div className="aspirasi-actions">
                   <button
                     type="button"
                     className="btn btn-ghost"
-                    onClick={() => markAktif(item.id)}
+                    onClick={() => openEdit(item)}
+                    disabled={saving}
                   >
-                    <RotateCcw size={15} aria-hidden="true" /> Aktifkan
+                    <Pencil size={15} aria-hidden="true" /> Edit
                   </button>
-                ) : (
+                  {item.archived ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => markAktif(item.id)}
+                      disabled={saving}
+                    >
+                      <RotateCcw size={15} aria-hidden="true" /> Aktifkan
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => markSelesai(item.id)}
+                      disabled={saving}
+                    >
+                      <Check size={15} aria-hidden="true" /> Selesai
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="btn btn-primary"
-                    onClick={() => markSelesai(item.id)}
+                    className="btn btn-ghost btn-danger-text"
+                    onClick={() => removeItem(item.id)}
+                    disabled={saving}
                   >
-                    <Check size={15} aria-hidden="true" /> Selesai
+                    <Trash2 size={15} aria-hidden="true" /> Hapus
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-danger-text"
-                  onClick={() => removeItem(item.id)}
-                >
-                  <Trash2 size={15} aria-hidden="true" /> Hapus
-                </button>
-              </div>
-            </article>
-          )
-        })}
-      </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      )}
 
       {showForm && (
         <div className="modal-backdrop" onClick={closeForm} role="presentation">
@@ -506,12 +546,17 @@ export default function AspirasiTab({ items, setItems, customTopics, setCustomTo
                   placeholder="Langkah yang sudah / akan diambil"
                 />
               </label>
+              {actionError && (
+                <p className="full muted" role="alert" style={{ color: 'var(--danger)' }}>
+                  {actionError}
+                </p>
+              )}
               <div className="modal-actions full">
-                <button type="button" className="btn btn-ghost" onClick={closeForm}>
+                <button type="button" className="btn btn-ghost" onClick={closeForm} disabled={saving}>
                   Batal
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Simpan
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Menyimpan…' : 'Simpan'}
                 </button>
               </div>
             </form>

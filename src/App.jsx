@@ -11,6 +11,7 @@ import AspirasiTab from './components/AspirasiTab'
 import MultimediaTab from './components/MultimediaTab'
 import TodoTab from './components/TodoTab'
 import { useLocalStorage } from './hooks/useLocalStorage'
+import { useAspirasi } from './hooks/useAspirasi'
 import './App.css'
 
 const TABS = [
@@ -21,7 +22,7 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState('aspirasi')
-  const [aspirasi, setAspirasi] = useLocalStorage('timmas.aspirasi', [])
+  const aspirasiApi = useAspirasi()
   const [customTopics, setCustomTopics] = useLocalStorage('timmas.topics', [])
   const [metrics, setMetrics] = useLocalStorage('timmas.metrics', [])
   const [clips, setClips] = useLocalStorage('timmas.clips', [])
@@ -33,7 +34,7 @@ export default function App() {
   function exportData() {
     const payload = {
       exportedAt: new Date().toISOString(),
-      aspirasi,
+      aspirasi: aspirasiApi.items,
       customTopics,
       metrics,
       clips,
@@ -56,7 +57,7 @@ export default function App() {
     setImporting(true)
     setFlash(null)
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(String(reader.result))
         if (
@@ -72,13 +73,20 @@ export default function App() {
         ) {
           throw new Error('Struktur backup tidak dikenali.')
         }
-        if (Array.isArray(data.aspirasi)) setAspirasi(data.aspirasi)
         if (Array.isArray(data.customTopics)) setCustomTopics(data.customTopics)
         if (Array.isArray(data.metrics)) setMetrics(data.metrics)
         if (Array.isArray(data.clips)) setClips(data.clips)
         if (Array.isArray(data.tasks)) setTasks(data.tasks)
         if (Array.isArray(data.events)) setEvents(data.events)
-        setFlash({ type: 'success', message: 'Data berhasil diimpor dari backup.' })
+        if (Array.isArray(data.aspirasi) && data.aspirasi.length) {
+          const n = await aspirasiApi.importItems(data.aspirasi)
+          setFlash({
+            type: 'success',
+            message: `Impor selesai. ${n} aspirasi masuk ke Supabase; data lokal lain juga diperbarui.`,
+          })
+        } else {
+          setFlash({ type: 'success', message: 'Data berhasil diimpor.' })
+        }
       } catch (err) {
         setFlash({
           type: 'error',
@@ -119,7 +127,7 @@ export default function App() {
               accept="application/json,.json"
               onChange={importData}
               hidden
-              disabled={importing}
+              disabled={importing || aspirasiApi.saving}
             />
           </label>
         </div>
@@ -160,10 +168,17 @@ export default function App() {
       <main className="app-main">
         {tab === 'aspirasi' && (
           <AspirasiTab
-            items={aspirasi}
-            setItems={setAspirasi}
+            items={aspirasiApi.items}
             customTopics={customTopics}
             setCustomTopics={setCustomTopics}
+            loading={aspirasiApi.loading}
+            saving={aspirasiApi.saving}
+            error={aspirasiApi.error}
+            onCreate={aspirasiApi.createItem}
+            onUpdate={aspirasiApi.updateItem}
+            onSetArchived={aspirasiApi.setArchived}
+            onRemove={aspirasiApi.removeItem}
+            onRefresh={aspirasiApi.refresh}
           />
         )}
         {tab === 'multimedia' && (
@@ -180,7 +195,7 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        Data tersimpan lokal di browser Anda · Backup rutin lewat Export JSON
+        Aspirasi di Supabase · Multimedia & To-do masih lokal · Backup lewat Export JSON
       </footer>
     </div>
   )
