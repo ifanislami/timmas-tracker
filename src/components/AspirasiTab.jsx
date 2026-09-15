@@ -398,14 +398,14 @@ export default function AspirasiTab({
                   <span className="aspirasi-ico" title="Aspirasi" aria-hidden="true">
                     <MessageSquareText size={16} />
                   </span>
-                  <div className="aspirasi-row-body cell-wrap">{item.aspirasi}</div>
+                  <div className="aspirasi-row-body">{item.aspirasi}</div>
                 </div>
 
                 <div className="aspirasi-row">
                   <span className="aspirasi-ico" title="Tindak lanjut" aria-hidden="true">
                     <ClipboardList size={16} />
                   </span>
-                  <div className="aspirasi-row-body cell-wrap">
+                  <div className="aspirasi-row-body">
                     {item.tindakLanjut || <span className="muted">Belum ada</span>}
                   </div>
                 </div>
